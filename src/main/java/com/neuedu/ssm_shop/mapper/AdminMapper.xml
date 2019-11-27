@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.neuedu.ssm_shop.mapper.AdminMapper">
+	<select id="findAll" resultMap="selectAdmin">
+		select id,admin_name,admin_password from t_admin
+	</select>
+	<insert id="insert" parameterType="Admin">
+		insert into t_admin(id,admin_name,admin_password) values(null,#{adminName},md5(#{adminPassword}))
+	</insert>
+	<select id="findById" parameterType="int" resultMap="selectAdmin">
+		select id,admin_name,admin_password from t_admin where id=#{id}
+	</select>
+	<update id="update" parameterType="Admin">
+		update t_admin set admin_name=#{adminName},admin_password=md5(#{adminPassword}) where id=#{id}
+	</update>
+	<delete id="delete" parameterType="int">
+		delete from t_admin where id=#{id}
+	</delete>
+	<update id="resetPassword" parameterType="int">
+		update t_user set user_password=md5("000000") where id=#{id}
+	</update>
+	<select id="findByAname" parameterType="String"
+		resultMap="selectAdmin">
+		select id,admin_name,admin_password from t_admin where admin_name=#{adminName}
+	</select>
+	<resultMap type="Admin" id="selectAdmin">
+		<id property="id" column="id" javaType="java.lang.Integer"/>
+		<result property="adminName" column="admin_name" javaType="String"/>
+		<result property="adminPassword" column="admin_password" javaType="String"/>
+	</resultMap>
+</mapper>

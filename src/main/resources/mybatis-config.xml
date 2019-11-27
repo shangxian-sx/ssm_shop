@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration
+  PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+
+	<!-- 给类配别名 -->
+	<typeAliases>
+		<!-- <typeAlias type="com.neuedu.entity.Admin" alias="Admin" /> -->
+		<!-- 给所有类配置别名 -->
+		<package name="com.neuedu.ssm_shop.pojo" />
+	</typeAliases>
+
+	<mappers>
+		<!-- 配置mapper包下所有的xml文件 -->
+		<package name="com.neuedu.ssm_shop.mapper" />
+		
+	</mappers>
+</configuration>

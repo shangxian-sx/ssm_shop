@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context
+		http://www.springframework.org/schema/context/spring-context.xsd
+		http://www.springframework.org/schema/aop
+		http://www.springframework.org/schema/aop/spring-aop.xsd
+		http://www.springframework.org/schema/tx
+		http://www.springframework.org/schema/tx/spring-tx.xsd">
+
+	<!-- 由Spring容器生成被代理类和切面 -->
+	<!-- <bean id="userService3" class="com.neuedu.service.impl.UserServiceImpl3"></bean> 
+		<bean id="log3" class="com.neuedu.log.Log3"></bean> <bean id="afterlog3" 
+		class="com.neuedu.log.AfterLog3"></bean> -->
+	<!-- 注册动态代理类 -->
+
+
+	<!-- 添加注解 -->
+	<context:annotation-config />
+	<context:component-scan
+		base-package="com.neuedu.ssm_shop" />
+
+	<!-- 使用AOP中的动态代理 -->
+	<aop:aspectj-autoproxy />
+
+	<!-- 配置数据源（用哪个数据库连接池） -->
+	<!-- 使用.properties文件 -->
+	<bean id="propertyConfigurer"
+		class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<property name="location" value="classpath:db.properties" />
+	</bean>
+
+	<!-- 使用dbcp中的DataSource -->
+	<bean id="dataSource"
+		class="org.apache.commons.dbcp2.BasicDataSource"
+		destroy-method="close">
+		<property name="driverClassName" value="${driver}" />
+		<property name="url" value="${url}" />
+		<property name="username" value="${username}" />
+		<property name="password" value="${password}" />
+	</bean>
+
+	<!-- 通过Spring加载mybatis -->
+	<bean id="sqlSessionFactory"
+		class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="dataSource" />
+		<property name="configLocation"
+			value="classpath:mybatis-config.xml" />
+	</bean>
+
+	<!-- 4.配置扫描Dao接口包，动态实现Dao接口注入到spring容器中 -->
+	<!--解释 ： https://www.cnblogs.com/jpfss/p/7799806.html -->
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<!-- 注入sqlSessionFactory -->
+		<property name="sqlSessionFactoryBeanName"
+			value="sqlSessionFactory" />
+		<!-- 给出需要扫描Dao接口包 -->
+		<property name="basePackage" value="com.neuedu.ssm_shop.mapper" />
+	</bean>
+
+	<!-- 声明式事务配置 -->
+	<!-- 配置事务管理器 -->
+	<bean id="transactionManager"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+
+	<!-- 配置事务通知 -->
+	<tx:advice id="txAdvice"
+		transaction-manager="transactionManager">
+		<tx:attributes>
+			<!-- 配置哪些方法使用何种事务，配置事务的传播特性 -->
+			<tx:method name="add" propagation="REQUIRED" />
+			<tx:method name="insert*" propagation="REQUIRED" />
+			<tx:method name="delete" propagation="REQUIRED" />
+			<tx:method name="update" propagation="REQUIRED" />
+			<!-- <tx:method name="myMethod" read-only="true" /> -->
+		</tx:attributes>
+	</tx:advice>
+
+	<!-- aop配置 -->
+	<aop:config>
+		<!-- 全局切入点 -->
+		<aop:pointcut
+			expression="execution(* com.neuedu.ssm_shop.service.impl.*.*(..))"
+			id="pointcut" />
+		<aop:advisor advice-ref="txAdvice" pointcut-ref="pointcut" />
+	</aop:config>
+
+	<!-- 事务注解 -->
+	<tx:annotation-driven />
+</beans>

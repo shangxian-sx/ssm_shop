@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.neuedu.ssm_shop.mapper.ProductMapper">
+
+	<sql id="productBasicSQL">
+		<!-- 两表联查 t_category t_product -->
+		p.id pid,
+		p.name pname,
+		p.descr pdescr,
+		p.normalprice,
+		p.memberprice,
+		p.pdate,
+		p.categoryid,
+		p.imgpath,
+		c.id cid,
+		c.category_name cname,
+		c.category_description cdescr,
+		c.category_parent_id cpid,
+		c.leaf,
+		c.grade
+	</sql>
+	
+	<select id="findAll" resultMap="findByCondition">
+		select  
+		<include refid="productBasicSQL"/>
+		from t_product p join t_category c on p.categoryid=c.id
+	</select>
+	
+	<select id="findByCondition" resultMap="findByCondition">
+		select  
+		<include refid="productBasicSQL"/>
+		from t_product p join t_category c on p.categoryid=c.id 
+		<where>
+			<if test="keywords!=null">
+				p.descr like concat("%",#{keywords},"%") or p.name like concat("%",#{keywords},"%")
+			</if>
+			<if test="category!=null">
+				and p.categoryid=#{cid}
+			</if>
+			<if test="startDate!=null and endDate!=null">
+				and  p.pdate between #{startDate} and #{endDate}
+			</if>
+			<if test="lowPrice!=null and highPrice!=null">
+				and p.normalprice between #{lowPrice} and #{highPrice}
+			</if>
+			
+		</where>
+	</select>
+	
+	<resultMap type="Product" id="findByCondition">
+		<id property="id" column="pid"/>
+		<result property="name" column="pname"/>
+		<result property="descr" column="pdescr"/>
+		<result property="normalprice" column="normalprice"/>
+		<result property="memberprice" column="memberprice"/>
+		<result property="pdate" column="pdate"/>
+		<result property="imgPath" column="imgpath"/>
+		<association property="category" javaType="Category">
+			<id property="id" column="cid"/>
+			<result property="categoryName" column="cname"/>
+			<result property="categoryDescription" column="cdescr"/>
+			<result property="categoryParentId" column="cpid"/>
+			<result property="leaf" column="leaf"/>
+			<result property="grade" column="grade"/>
+		</association>
+	</resultMap>
+	
+	<!-- 添加商品 -->
+	<insert id="insert" parameterType="Product">
+		insert into t_product values(null,#{name},#{descr},#{normalprice},#{memberprice},now(),#{categoryid},#{imgPath})
+	</insert>
+	
+	<delete id="delete" parameterType="Integer">
+		delete from t_product where id=#{id}
+	</delete>
+	
+	<!-- 查询最新商品 -->
+	<select id="lastProduct" resultMap="findByCondition" parameterType="Integer">
+		select <include refid="productBasicSQL"/> 
+		from t_product p join t_category c on p.categoryid=c.id
+		order by pdate desc
+		limit #{pageNo},4
+	</select>
+	
+</mapper>

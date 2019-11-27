@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.neuedu.ssm_shop.mapper.CategoryMapper">
+	<!-- 基本查询 -->
+	<sql id="baseSQL">
+		select
+		id,category_name,category_description,category_parent_id,leaf,grade
+		from t_category
+	</sql>
+	<!-- 查询所有类别 -->
+	<select id="findAll" resultMap="selectCategory">
+		select
+		id,category_name,category_description,category_parent_id,leaf,grade
+		from t_category
+	</select>
+
+	<!-- 添加根类别 -->
+	<insert id="insertRoot" parameterType="CategoryBean">
+		insert into
+		t_category(id,category_name,category_description,category_parent_id,leaf,grade)
+		value(null,#{name},#{descr},0,1,1)
+	</insert>
+	
+	<!-- 添加子节点 -->
+	<insert id="insertChild" parameterType="Category">
+		insert into t_category
+		values(null,#{categoryName},#{categoryDescription},#{categoryParentId},1,#{grade})
+	</insert>
+	<!-- 更新父节点的 -->
+	<update id="updateParent" parameterType="int">
+		update t_category set
+		leaf=0 where id=#{categoryParentId}
+	</update>
+
+	<!-- 初始化菜单树 -->
+	<!-- 这里的id的值作为下面的查询返回结果resultMap的值 -->
+	<!-- collecion中的column属性可以为多个值，这里只有一个，它作为下面递归查询传递进去的参数 -->
+	<!-- ofType和javaType属性正好联合构成了数据Bean类Category中的children属性的数据类型 -->
+	<!-- select的值为下面递归查询的select标签的id值 -->
+	<resultMap type="Category" id="categoryTree">
+		<id column="id" property="id" />
+		<result property="categoryName" column="category_name" />
+		<result property="categoryDescription"
+			column="category_description" />
+		<result property="categoryParentId" column="category_parent_id" />
+		<result property="leaf" column="leaf" />
+		<result property="grade" column="grade" />
+		<collection column="id" property="children"
+			ofType="Category" select="selectCategoryChildrenByPid" />
+	</resultMap>
+
+	<!-- 再利用上次查询结果collection中column的值id做递归查询，查出所有子菜单 -->
+	<!-- 这里的返回结果必须为resultMap，并且值为上面构建的resultMap的id的值 -->
+	<select id="selectCategoryChildrenByPid"
+		resultMap="categoryTree" parameterType="Integer">
+		select
+		id,category_name,category_description,category_parent_id,leaf,grade
+		from t_category where category_parent_id=#{id}
+	</select>
+
+	<!-- 先查询菜单根级目录 -->
+	<!-- 这里的返回结果必须为resultMap，并且值为上面构建的resultMap的id的值 -->
+	<select id="findToTree" resultMap="categoryTree">
+		select
+		id,category_name,category_description,category_parent_id,leaf,grade
+		from t_category where category_parent_id=0
+	</select>
+	<!-- 根据pid查询grade -->
+	<select id="findParentGradeByPid" parameterType="int"
+		resultType="int">
+		select grade from t_category where id=#{pid}
+	</select>
+	
+
+	<resultMap type="Category" id="selectCategory">
+		<id property="id" column="id" javaType="java.lang.Integer" />
+		<result property="categoryName" column="category_name"
+			javaType="String" />
+		<result property="categoryDescription"
+			column="category_description" javaType="String" />
+		<result property="categoryParentId" column="category_parent_id"
+			javaType="int" />
+		<result property="leaf" column="leaf" javaType="Boolean" />
+		<result property="grade" column="grade" javaType="int" />
+	</resultMap>
+	<!--通过id查询leaf 是否是 叶子节点完成递归删除-->
+	<select id="findById" parameterType="int"
+		resultMap="selectCategory">
+		<include refid="baseSQL" />
+		where id=#{id}
+	</select>
+	<!-- 查询类级别为3级的 -->
+	<select id="findThree" resultMap="selectCategory">
+		<include refid="baseSQL" />
+		<where>
+			grade=3
+		</where>
+	</select>
+	
+	<!-- 删除类别 -->
+	<delete id="delete" parameterType="int">
+		delete from t_category where id = #{id}
+	</delete>
+	
+	<!-- 查询pid完成递归删除 -->
+	<select id="findByPid" parameterType="int"
+		resultMap="categoryTree">
+		
+		select
+		id,category_name,category_description,category_parent_id,leaf,grade
+		from t_category where category_parent_id=#{pid}
+	</select>
+	
+</mapper>
